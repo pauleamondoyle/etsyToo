@@ -343,15 +343,12 @@ var EtsyRouter = Backbone.Router.extend({
 	},
 
 	goSingleView: function(listingHashId){
-		var sv = new SingleView({collection:this.ec});
-		sv.singleViewId = listingHashId
-		sv.render();				
+		this.sv.singleViewId = listingHashId
+		this.sv.render();				
 	},
 
 	goBackHome: function(){
 		var self = this
-		this.ec = new EtsyCollection();
-		this.gv = new GroupView({collection:this.ec});
 		this.ec.fetch({
 			processData: true,
 			dataType: 'jsonp',
@@ -364,8 +361,6 @@ var EtsyRouter = Backbone.Router.extend({
 	},
 
 	goKeywordSearch: function(keyword){
-		this.search_ec = new EtsyCollection();
-		this.search_gv = new GroupView({collection:this.search_ec})
 		this.ec.fetch({
 			processData: true,
 			dataType: 'jsonp',
@@ -381,6 +376,7 @@ var EtsyRouter = Backbone.Router.extend({
 		var self = this
 		this.ec = new EtsyCollection();
 		this.gv = new GroupView({collection:this.ec});
+		this.sv = new SingleView({collection:this.ec});
 		this.ec.fetch({
 			processData: true,
 			dataType: 'jsonp',
