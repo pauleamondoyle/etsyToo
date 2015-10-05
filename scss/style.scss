@@ -92,23 +92,30 @@ header{
     padding-bottom: 15px;
     width: 100%;
     margin: 0;
-    text-align: center;
+    text-align: left;
+    background-color: black;
 }
 
 input{
-    margin-top: 3px;    
+    margin-top: 3px; 
+    margin-left: 60px;
+    background-color: black;
+    color: white; 
+    outline: 1px white; 
+    font-weight: lighter; 
+    font-size: 12px;
+    height: 30px;
+    padding-left: 3px;
 }
 
-input:focus{
-    outline: #FF7300;
-
-}
 
 #logo {
-    font-family: 'Patua One', cursive;
-    color: #FF7300;
-    font-size: 20px;
-    text-align: center;
+    font-family: 'Roboto', sans-serif;
+    letter-spacing: 2px;
+    color: white;
+    font-size: 18px;
+    text-align: left;
+    margin-left: 60px;
 }
 
 #logo:hover{
@@ -187,7 +194,46 @@ input:focus{
     margin-bottom: 5px;
 }
 
+#storeIcon img{
+    width: 65px;
+    border-radius: 7px;
+}
+
+#storeSection{
+    margin-bottom: 8px;
+}
+
+#moreFromSeller{
+    margin-bottom: 8px;
+}
+
+#moreItemOneName{
+    margin-bottom: 16px;
+}
+
+#storeName p{
+    color: blue;
+    text-decoration: underline;
+    cursor: pointer;
+    transition: none;
+}
+
+#moreItemOneName:hover{
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+#moreItemTwoName:hover{
+    text-decoration: underline;
+    cursor: pointer;
+}
+
 button{
     height: 30px;
     width: 60px;
+}
+
+hr{
+    margin-top: 12px;
+    margin-bottom: 8px;
 }
