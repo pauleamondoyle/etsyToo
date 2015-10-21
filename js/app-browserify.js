@@ -4,7 +4,9 @@ require("babel/polyfill")
 let fetch = require('./fetcher')
 
 var $ = require('jquery'),
-	Backbone = require('backbone')
+	Backbone = require('backbone'),
+	Parse = require('parse'),
+	React = require('react')
 
 // other stuff that we don't really use in our own code
 // var Pace = require("../bower_components/pace/pace.js")
@@ -23,6 +25,16 @@ var $ = require('jquery'),
 // Esty API Key: 3601iprtf5l3jbpbwg37ughm
 // =================================================
 // 
+
+// ===== PARSE initialize =====
+
+var APP_ID = 'kZfMFDyMl0wmoibO915tIHco0zUBk80Ssw2p98SK',
+	JS_KEY = 'FUMUfRZjafTmcwUt8klfoACUyuugQNJAObqgSD0S',
+	REST_API_KEY = '1m0jJfZipYjFwoDHmjKluAytzCcmp7mT7F4tGp0M'
+
+Parse.initialize(APP_ID,JS_KEY)
+
+
 // // ===SEARCHBAR===
 
 var searchKeyword = function(event){
@@ -45,7 +57,18 @@ var goHome = function(){
 $('#logo').click(goHome)
 
 
-// 
+// === GO TO FAVORITES ===
+
+var viewFavorites = function(){
+	location.hash = 'favorites'
+}
+
+$('#favoritesTab').click(viewFavorites)
+
+
+//
+
+
 // ===ARROW EVENT LISTENERS===
 // 
 
@@ -108,8 +131,38 @@ var matchId = function(){
 
 
 
+// === MODELS ===
+// 
 
-// === COLLECTION ===
+
+var EtsyModel = Backbone.Model.extend({
+
+	// url: 'https://openapi.etsy.com/v2/listings/' + showSingle() +'.js?api_key=aavnvygu0h5r52qes74x9zvo',
+
+	// url: 'https://openapi.etsy.com/v2/listings/active.js?api_key=aavnvygu0h5r52qes74x9zvo&includes=MainImage&callback=',
+
+	// url: 'http://openapi.etsy.com/v2/shops/:shop_id/listings/active?method=GET&api_key=aavnvygu0h5r52qes74x9zvo&includes=MainImage',
+
+	// api_key: '3601iprtf5l3jbpbwg37ughm',
+
+	parse: function(responseData){
+		console.log('Fetch is done')
+		return responseData
+	}
+
+})
+
+var FavModel = Backbone.Model.extend({
+	url: "https://api.parse.com/1/classes/FavItem",
+
+	parseHeaders: {
+		"X-Parse-Application-Id": APP_ID,
+		"X-Parse-REST-API-Key": REST_API_KEY
+	}
+})
+
+
+// === COLLECTIONS ===
 // 
 
 var EtsyCollection = Backbone.Collection.extend({
@@ -137,26 +190,22 @@ var StoreCollection = Backbone.Collection.extend({
 
 })
 
-// === MODEL ===
-// 
+var FavCollection = Backbone.Collection.extend({
+	url: "https://api.parse.com/1/classes/FavItem",
 
+	parseHeaders: {
+		"X-Parse-Application-Id": APP_ID,
+		"X-Parse-REST-API-Key": REST_API_KEY
+	},
 
-var EtsyModel = Backbone.Model.extend({
-
-	// url: 'https://openapi.etsy.com/v2/listings/' + showSingle() +'.js?api_key=aavnvygu0h5r52qes74x9zvo',
-
-	// url: 'https://openapi.etsy.com/v2/listings/active.js?api_key=aavnvygu0h5r52qes74x9zvo&includes=MainImage&callback=',
-
-	// url: 'http://openapi.etsy.com/v2/shops/:shop_id/listings/active?method=GET&api_key=aavnvygu0h5r52qes74x9zvo&includes=MainImage',
-
-	// api_key: '3601iprtf5l3jbpbwg37ughm',
+	model: FavModel,
 
 	parse: function(responseData){
-		console.log('Fetch is done')
-		return responseData
+		return responseData.results
 	}
-
 })
+
+
 
 
 // === VIEWS ===
@@ -310,7 +359,8 @@ var SingleView = Backbone.View.extend({
 		'click #storeName': 'goDisplayStore',
 		'click img': 'goDisplayMore',
 		'click #moreItemOneName' : 'goDisplayMore',
-		'click #moreItemTwoName': 'goDisplayMore'
+		'click #moreItemTwoName': 'goDisplayMore',
+		'click #favoriteButton': 'makeFavorite',
 	},
 
 	goDisplayMore: function(event){
@@ -353,6 +403,40 @@ var SingleView = Backbone.View.extend({
 		})
 
 	},
+
+		// ===== PARSE OBJECTS =====
+
+	makeFavorite: function(){
+
+
+		var singleViewId = this.singleViewId,
+			thisItem = this.model.attributes.results[0],
+			singleSmallImage = thisItem.Images[0].url_170x135,
+			singleLargeImage = thisItem.Images[0].url_570xN,
+					singleDescription = thisItem.description,
+					singlePrice = thisItem.price,
+					singleState = thisItem.state,
+					singleTitle = thisItem.title,
+					singleViews = thisItem.views,
+					singleQuantity = thisItem.quantity
+
+		var FavItem = Parse.Object.extend({
+			className: 'FavItem'
+		})
+
+		var favItem = new FavItem()
+
+		favItem.save({
+			itemTitle: singleTitle,
+			itemPrice: singlePrice,
+			itemImage: singleSmallImage,
+			itemId: singleViewId,
+			itemViews: singleViews
+
+		}).then(function(){alert('This item has been added to your favorites.')})
+	},
+
+// ==== end PARSE object ====
 	
 	displaySingle: function(){
 		console.log('Running displaySingle')
@@ -422,6 +506,7 @@ var SingleView = Backbone.View.extend({
 							<p> ${singleDescription}\
 							</p>\
 						</div>\
+						<button id='favoriteButton' type='button'>Favorite</button>
 						<hr>\
 						<div id='storeSection'>\
 							<p>VISIT THE SHOP\
@@ -489,6 +574,72 @@ var SingleView = Backbone.View.extend({
 })
 
 
+var FavView = React.createClass({
+
+	_clickHandler: function(event){
+		itemClicked = event.target
+		var itemClickedId = itemClicked.dataset.id
+		location.hash = 'listingDetail/' + itemClickedId
+	},
+
+	_formatFavs: function(favThing){
+		console.log('ok, here is format')
+		console.log(favThing)
+		return(
+			<div id='favListItem'>
+				<img id='favItemImage' data-id={favThing.attributes.itemId} onClick={this._clickHandler} src={favThing.attributes.itemImage}></img>
+				<p id='favItemTitle' data-id={favThing.attributes.itemId} onClick={this._clickHandler}>{favThing.attributes.itemTitle}</p>
+				<p id='favItemPrice'>${favThing.attributes.itemPrice}</p>
+			</div>
+			)
+			
+	},
+
+	render: function(){
+
+		var favThings = this.props.favThings
+
+		return(
+			<div id='favList'>
+				<h1>Favorites</h1>
+				{favThings.map(this._formatFavs)}
+			</div>
+			)
+		}
+	
+})
+
+// var FavView = Backbone.View.extend({
+
+// 	el: '#container',
+
+// 	formatFavs: function(result){
+// 		console.log('ok, here is format')
+// 		console.log(result)
+// 		return <p>{result.attributes.itemTitle}</p>
+			
+// 	},
+
+// 	showFavs: function(){
+// 		console.log('Here is showFavs:')
+// 		console.log(this)
+
+// 		var self = this
+
+// 		this.$el.html(`\
+// 			${self.collection.models.map(self.formatFavs)}\
+// 			`)
+// 	},
+
+// 	render: function(){
+// 		console.log('FavView is rendering')
+// 		this.showFavs()
+// 	}
+
+
+// })
+
+
 // === ROUTING ===
 
 
@@ -498,7 +649,8 @@ var EtsyRouter = Backbone.Router.extend({
 			'listingDetail/:listingHashId': 'goSingleView',
 			'search/:keyword': 'goKeywordSearch',
 			'home':'goBackHome',
-			'shop/:shopId': 'goFullShop'
+			'shop/:shopId': 'goFullShop',
+			'favorites':'goFavorites'
 	},
 
 	goSingleView: function(listingHashId){
@@ -574,14 +726,40 @@ var EtsyRouter = Backbone.Router.extend({
 
 	},
 
+
+	// The below worked:
+	// goFavorites: function(){
+	// 	var query = new Parse.Query('FavItem')
+	// 	query.find().then(function(results){
+	// 		results.forEach(function(result){
+	// 			console.log(result.get('itemTitle'))
+	// 		})}
+	// 		)
+
+	// },
+	// 
+	// 
+	goFavorites: function(){
+		var self = this
+		this.fc.fetch({
+			headers: this.fc.parseHeaders
+		}).done(function(){
+			React.render(<FavView favThings = {self.fc} />, document.querySelector('#container')) 
+		})
+
+	},
+
 	initialize: function() {
 		var self = this
 		this.ec = new EtsyCollection();
 		this.em = new EtsyModel();
+		this.fc = new FavCollection();
+		this.fm = new FavModel();
 		this.storeCollection = new StoreCollection();
 		this.gv = new GroupView({collection:this.ec});
 		this.sv = new SingleView({model:this.em, collection:this.storeCollection});
 		this.storeView = new StoreView({collection:this.storeCollection})
+		this.favView = new FavView({model: this.fv, collection:this.fc})
 		this.ec.fetch({
 			processData: true,
 			dataType: 'jsonp',
@@ -595,6 +773,7 @@ var EtsyRouter = Backbone.Router.extend({
 	}
 
 })
+
 
 var er = new EtsyRouter();
 
